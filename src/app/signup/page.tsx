@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import Link from 'next/link';
+import {useRouter} from 'next/navigation'
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import axios from 'axios'
 
 import { Button } from "@/components/ui/button"
 import {
@@ -31,12 +34,14 @@ const formSchema = z.object({
 
 
 const page = () => {
+  const router = useRouter();
   const [hidepassword, sethidepassword] = useState(true);
+  const [loading, setloading] = useState(false);
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullname: "",
+      fullname: "", 
       id: "",
       password: "",
       branch: "",
@@ -44,15 +49,27 @@ const page = () => {
   })
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     const formData = {
       fullname: values.fullname,
       id: values.id,
+      password: values.password,
       branch: values.branch,
-      password: values.password
     }
-
     console.table(formData);
+
+    try {
+      setloading(true);
+      const res = await axios.post('/api/users/signup', formData);
+      console.log("Success", res);
+      router.push('/login');
+    } catch (error) {
+      console.log("Error occured ", error);
+    }finally{
+      setloading(false);
+    }
+    
+
     form.reset();
   }
   return (
@@ -139,9 +156,14 @@ const page = () => {
               </FormItem>
             )}
           />
-          <Button type="submit">Sign Up</Button>
+          <Button disabled={loading} type="submit">Sign Up</Button>
         </form>
       </Form>
+      <Link className='mt-16' href="/login">
+      <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+      Already a member? Sign in..
+    </code>
+      </Link>
     </>
   )
 }
